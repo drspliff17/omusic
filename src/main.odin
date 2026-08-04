@@ -33,11 +33,7 @@ main :: proc() {
 	}
 
 	Globals_Init()
-	defer {
-		delete_string(HOME)
-		delete_string(CONFIG_DIRECTORY)
-		delete_string(CONFIG_FILEPATH)
-	}
+	defer Globals_Delete()
 
 	cfg_create_err := Config_Create_File()
 	if cfg_create_err != nil {
@@ -52,5 +48,15 @@ main :: proc() {
 	}
 
 	defer Config_Delete(&CONFIG)
+
+	testM := Download_Manager_Create()
+	defer Download_Manager_Delete(testM)
+
+	job := Download_Data_Create()
+	job.download_url = fmt.aprintf("example lol")
+	job.output_destination = fmt.aprintf("your ma's puss")
+	Download_Job_Create(job, testM)
+
+	for j in testM.jobs do fmt.printfln("TEST:\n%v\n-------\n", j^)
 
 }

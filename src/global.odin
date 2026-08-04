@@ -28,3 +28,9 @@ Globals_Init :: proc() {
 	CONFIG_FILEPATH = strings.clone(config_file, context.allocator)
 	delete_string(config_file)
 }
+
+Globals_Delete :: proc() {
+	delete_string(HOME)
+	delete_string(CONFIG_DIRECTORY)
+	delete_string(CONFIG_FILEPATH)
+}
