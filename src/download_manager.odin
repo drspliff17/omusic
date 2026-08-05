@@ -16,8 +16,8 @@ Download_Manager_Create :: proc() -> ^Download_Manager {
 
 Download_Manager_Delete :: proc(d: ^Download_Manager) {
 	for job in d.jobs {
-		err := os.remove_all(job.tmp_dir)
-		if err != nil do fmt.eprintfln("Failed to remove temp directory: %s", job.tmp_dir)
+		err := os.remove_all(job^.tmp_dir)
+		if err != nil do fmt.eprintfln("Failed to remove temp directory: %s", job^.tmp_dir)
 		Download_Job_Delete(job)
 	}
 	delete(d.jobs)

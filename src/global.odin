@@ -4,12 +4,14 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 
+CONFIG: Config
+DOWNLOAD_MANAGER: ^Download_Manager
+
 HOME: string
 CONFIG_DIRECTORY: string
 CONFIG_FILEPATH: string
 
-CONFIG: Config
-
+// Initialises HOME, CONFIG_DIRECTORY && CONFIG_FILEPATH
 Globals_Init :: proc() {
 	home, config_dir, config_file: string
 	err: os.Error
@@ -30,6 +32,7 @@ Globals_Init :: proc() {
 	delete_string(config_file)
 }
 
+// Deletes HOME, CONFIG_DIRECTORY && CONFIG_FILEPATH
 Globals_Delete :: proc() {
 	delete_string(HOME)
 	delete_string(CONFIG_DIRECTORY)

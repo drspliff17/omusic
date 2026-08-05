@@ -17,9 +17,10 @@ Download_Data_Create :: proc() -> ^Download_Data {
 }
 
 Download_Data_Delete :: proc(d: ^Download_Data) {
-	delete_string(d.download_url)
-	delete_string(d.output_destination)
+	if len(d.download_url) > 0 do delete_string(d.download_url)
+	if len(d.output_destination) > 0 do delete_string(d.output_destination)
 	if len(d.tag_artist) > 0 do delete_string(d.tag_artist)
 	if len(d.tag_album) > 0 do delete_string(d.tag_album)
 	if len(d.tag_title) > 0 do delete_string(d.tag_title)
+	free(d)
 }

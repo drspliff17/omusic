@@ -9,6 +9,7 @@ Download_Job :: struct {
 	tmp_dir: string,
 }
 
+// Constructs Download_Job, then appends to manager.jobs
 Download_Job_Create :: proc(data: ^Download_Data, manager: ^Download_Manager) {
 	tmp := Download_Job_Assign_Temp_Directory()
 	defer delete_string(tmp)
@@ -24,7 +25,6 @@ Download_Job_Create :: proc(data: ^Download_Data, manager: ^Download_Manager) {
 Download_Job_Delete :: proc(job: ^Download_Job) {
 	delete_string(job.tmp_dir)
 	Download_Data_Delete(job.data)
-	free(job.data)
 	free(job)
 }
 

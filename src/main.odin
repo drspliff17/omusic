@@ -49,18 +49,16 @@ main :: proc() {
 
 	defer Config_Delete(&CONFIG)
 
-	DOWNLOAD_MANAGER := Download_Manager_Create()
+	DOWNLOAD_MANAGER = Download_Manager_Create()
 	defer Download_Manager_Delete(DOWNLOAD_MANAGER)
 
+	parse_success := Parse_Args(DOWNLOAD_MANAGER)
+	if !parse_success do return
 
-	// testM := Download_Manager_Create()
-	// defer Download_Manager_Delete(testM)
-	//
-	// job := Download_Data_Create()
-	// job.download_url = fmt.aprintf("example lol")
-	// job.output_destination = fmt.aprintf("your ma's puss")
-	// Download_Job_Create(job, testM)
-	//
-	// for j in testM.jobs do fmt.printfln("TEST:\n%v\n-------\n", j^)
+	fmt.printfln("TEST\nJob Count = %d", len(DOWNLOAD_MANAGER.jobs))
+
+	for j in DOWNLOAD_MANAGER.jobs {
+		fmt.printfln("%v", j.data^)
+	}
 
 }
