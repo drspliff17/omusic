@@ -60,10 +60,14 @@ main :: proc() {
 
 	defer Config_Delete(&CONFIG)
 
+	if !Config_Ensure_Valid(&CONFIG) do return
+
 	DOWNLOAD_MANAGER = Download_Manager_Create()
 	defer Download_Manager_Delete(DOWNLOAD_MANAGER)
 
 	manager_init := Download_Manager_Init_From_Args(DOWNLOAD_MANAGER)
 	if !manager_init do return
+
+	Download_Process_Job(DOWNLOAD_MANAGER.jobs[0])
 
 }

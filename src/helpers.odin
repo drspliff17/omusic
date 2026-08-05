@@ -33,11 +33,9 @@ Check_Dependancies :: proc() -> (missing_deps: []string) {
 	return slice.clone(missing[:], context.allocator)
 }
 
-//TODO: Convert to []string nobhead
-Construct_YtDlp_Args :: proc(d: ^Download_Job) -> string {
+Construct_YtDlp_Args :: proc(d: ^Download_Job) -> []string {
 	d_args := make([dynamic]string)
 	defer {
-		for a in d_args do delete_string(a)
 		delete(d_args)
 	}
 
@@ -45,9 +43,27 @@ Construct_YtDlp_Args :: proc(d: ^Download_Job) -> string {
 	append(&d_args, strings.clone(base))
 	append(&d_args, strings.clone(d.data^.download_url))
 
-	// TODO: Add cookies if enabled in config
+	if CONFIG.send_browser_cookies {
+		cookie_str := strings.join({"--cookies-from-browser", CONFIG.browser_for_cookies}, " ")
+		append(&d_args, strings.clone(cookie_str))
+		delete_string(cookie_str)
+	}
 
-	return strings.join(d_args[:], " ", context.allocator)
+	return slice.clone(d_args[:], context.allocator)
+}
+
+Construct_EyeD3_Args :: proc(d: ^Download_Job) -> []string {
+	d_args := make([dynamic]string)
+	defer {
+		delete(d_args)
+	}
+
+	base := "eyeD3"
+	append(&d_args, strings.clone(base))
+
+	//TODO: FINISH LOGIC HERE
+
+	return slice.clone(d_args[:], context.allocator)
 }
 
 Print_Help :: proc() {

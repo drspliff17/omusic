@@ -152,6 +152,45 @@ Download_Manager_Init_From_Args :: proc(m: ^Download_Manager) -> (init_ok: bool)
 			title = strings.clone(args[1])
 			args = args[2:]
 
+		case "-ttf", "--tag-title-filename":
+			CONFIG.always_use_file_name = true
+			args = args[1:]
+
+		case "-tad", "--tag-artist-directory":
+			CONFIG.always_use_directory_name = true
+			args = args[1:]
+
+		case "-wd", "--use-working-directory":
+			CONFIG.always_use_working_directory = true
+			args = args[1:]
+
+		case "-mk", "--allow-mkdir-destination":
+			CONFIG.allow_make_destination = true
+			args = args[1:]
+
+		case "-sc", "--send-browser-cookies":
+			max := len(args) <= 2 ? len(args) : 2
+			switch (max) {
+			case 1:
+				if len(CONFIG.browser_for_cookies) == 0 {
+					fmt.eprintln(
+						"[ERROR] Invalid Usage: Expected browser, and none is provided from config",
+					)
+					return false
+				} else {
+					CONFIG.send_browser_cookies = true
+					args = args[1:]
+				}
+			case 2:
+				CONFIG.send_browser_cookies = true
+				if len(CONFIG.browser_for_cookies) > 0 do delete_string(CONFIG.browser_for_cookies)
+				CONFIG.browser_for_cookies = strings.clone(args[1])
+				args = args[2:]
+			}
+
+		case:
+			fmt.eprintfln("Unknown argument: %s", args[0])
+			return false
 		}
 	}
 
