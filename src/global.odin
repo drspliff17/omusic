@@ -7,6 +7,7 @@ import "core:strings"
 HOME: string
 CONFIG_DIRECTORY: string
 CONFIG_FILEPATH: string
+
 CONFIG: Config
 
 Globals_Init :: proc() {
