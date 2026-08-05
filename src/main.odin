@@ -65,6 +65,12 @@ main :: proc() {
 	DOWNLOAD_MANAGER = Download_Manager_Create()
 	defer Download_Manager_Delete(DOWNLOAD_MANAGER)
 
+	test := "!example.thing/.mp3"
+	testS, ok := Get_Cleaned_Filename(test)
+	if ok do delete_string(testS)
+	if true do return
+	//
+
 	manager_init := Download_Manager_Init_From_Args(DOWNLOAD_MANAGER)
 	if !manager_init do return
 

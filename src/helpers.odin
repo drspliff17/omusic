@@ -35,18 +35,17 @@ Check_Dependancies :: proc() -> (missing_deps: []string) {
 
 Construct_YtDlp_Args :: proc(d: ^Download_Job) -> []string {
 	d_args := make([dynamic]string)
-	defer {
-		delete(d_args)
-	}
+	defer delete(d_args)
 
-	base := "yt-dlp -x --audio-format mp3"
-	append(&d_args, strings.clone(base))
+	append(&d_args, strings.clone("yt-dlp"))
+	append(&d_args, strings.clone("-x"))
+	append(&d_args, strings.clone("--audio-format"))
+	append(&d_args, strings.clone("mp3"))
 	append(&d_args, strings.clone(d.data^.download_url))
 
 	if CONFIG.send_browser_cookies {
-		cookie_str := strings.join({"--cookies-from-browser", CONFIG.browser_for_cookies}, " ")
-		append(&d_args, strings.clone(cookie_str))
-		delete_string(cookie_str)
+		append(&d_args, strings.clone("--cookies-from-browser"))
+		append(&d_args, strings.clone(CONFIG.browser_for_cookies))
 	}
 
 	return slice.clone(d_args[:], context.allocator)
