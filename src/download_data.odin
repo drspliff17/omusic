@@ -10,12 +10,14 @@ Download_Data :: struct {
 	tag_title:          string,
 }
 
+// Constructor
 Download_Data_Create :: proc() -> ^Download_Data {
 	d, err := new(Download_Data)
 	if err != nil do fmt.panicf("[ERROR] Failed to allocate Download_Data: %v", err)
 	return d
 }
 
+// Destructor
 Download_Data_Delete :: proc(d: ^Download_Data) {
 	if len(d.download_url) > 0 do delete_string(d.download_url)
 	if len(d.output_destination) > 0 do delete_string(d.output_destination)

@@ -22,6 +22,7 @@ Download_Job_Create :: proc(data: ^Download_Data, manager: ^Download_Manager) {
 	append(&manager.jobs, job)
 }
 
+// Destructor
 Download_Job_Delete :: proc(job: ^Download_Job) {
 	delete_string(job.tmp_dir)
 	Download_Data_Delete(job.data)

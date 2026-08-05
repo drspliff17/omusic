@@ -32,6 +32,17 @@ main :: proc() {
 		mem.tracking_allocator_destroy(&track)
 	}
 
+	missing_dependancies := Check_Dependancies()
+	defer {
+		for m in missing_dependancies do delete_string(m)
+		delete_slice(missing_dependancies)
+	}
+	if len(missing_dependancies) > 0 {
+		fmt.eprintln("[ERROR] Failed Dependancy Check, could not find:")
+		for m in missing_dependancies do fmt.eprintfln("\t-  %s", m)
+		return
+	}
+
 	Globals_Init()
 	defer Globals_Delete()
 
@@ -52,13 +63,7 @@ main :: proc() {
 	DOWNLOAD_MANAGER = Download_Manager_Create()
 	defer Download_Manager_Delete(DOWNLOAD_MANAGER)
 
-	parse_success := Parse_Args(DOWNLOAD_MANAGER)
-	if !parse_success do return
-
-	fmt.printfln("TEST\nJob Count = %d", len(DOWNLOAD_MANAGER.jobs))
-
-	for j in DOWNLOAD_MANAGER.jobs {
-		fmt.printfln("%v", j.data^)
-	}
+	manager_init := Download_Manager_Init_From_Args(DOWNLOAD_MANAGER)
+	if !manager_init do return
 
 }
