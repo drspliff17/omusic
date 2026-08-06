@@ -4,24 +4,6 @@ import "core:fmt"
 import "core:os"
 
 
-Download_Job_Clean_Files :: proc(d: ^Download_Job) -> bool {
-	files, err := os.read_all_directory_by_path(d^.tmp_dir, context.allocator)
-	defer {
-		for f in files do os.file_info_delete(f, context.allocator)
-		delete_slice(files)
-	}
-	if err != nil {
-		fmt.eprintfln("[ERROR] Failed to read directory: %s: %v", d^.tmp_dir, err)
-		return false
-	}
-
-	for f in files {
-
-	}
-
-	return true
-}
-
 // Main Download_Job proc
 Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 	download_args := Construct_YtDlp_Args(d)
@@ -42,14 +24,13 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 	}
 
 	if state.exit_code != 0 {
-		//TODO: Add log entry here
+		//NOTE: Add log entry here
 		fmt.eprintfln("[ERROR] Failed to download job [%s] -> dumping StdErr:\n", d.tmp_dir)
 		fmt.eprintfln("%s", string(stderr))
 		return false
 	}
 
 	if CONFIG.enable_file_name_cleanup {
-		//TODO: Add file cleanup process
 		file_info, fi_err := os.read_all_directory_by_path(d^.tmp_dir, context.allocator)
 		if fi_err != nil {
 			fmt.eprintfln("[ERROR] Failed to read directory: [%s]: %v", d^.tmp_dir, fi_err)
@@ -61,10 +42,26 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 		}
 
 		for file in file_info {
-			fmt.printf("TEST: PRE:\t%s", file.name)
 			nn := Get_Stripped_Filename(file.name)
-			fmt.printfln("\t POST:\n%s", nn)
-			delete_string(nn)
+			defer delete_string(nn)
+
+			new_path, err := os.join_path({os.dir(file.fullpath), nn}, context.allocator)
+			if err != nil {
+				fmt.eprintfln("[ERROR] Failed to allocate new_path:  [%s]: %v", file.fullpath, err)
+				return false
+			}
+			defer delete_string(new_path)
+
+			name_err := os.rename(file.fullpath, new_path)
+			if name_err != nil {
+				fmt.eprintfln(
+					"[ERROR] Failed to move file [%s] to %s: %v",
+					file.name,
+					d^.data.output_destination,
+					name_err,
+				)
+				return false
+			}
 		}
 	}
 
@@ -72,7 +69,7 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 
 	copy_err := os.copy_directory_all(d.data^.output_destination, d.tmp_dir)
 	if copy_err != nil {
-		//TODO: Add log entry here
+		//NOTE: Add log entry here
 		fmt.eprintfln("[ERROR] Failed to move finished job [%s]", d.tmp_dir)
 		return false
 	}
