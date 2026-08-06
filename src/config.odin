@@ -20,12 +20,14 @@ Config :: struct {
 	send_browser_cookies:         bool,
 	enable_download_logging:      bool,
 	enable_file_name_cleanup:     bool,
+	use_underscore_for_spaces:    bool,
 	allow_make_destination:       bool,
 	always_use_file_name:         bool,
 	always_use_directory_name:    bool,
 	always_use_working_directory: bool,
 }
 
+// Create default config file, or early return if it already exists
 Config_Create_File :: proc() -> Config_Error {
 	if os.exists(CONFIG_FILEPATH) {
 		if DEBUG {
@@ -50,6 +52,8 @@ Config_Create_File :: proc() -> Config_Error {
 		default_download_directory = usr_music,
 		download_log_file_path     = dwn_log,
 		enable_download_logging    = true,
+		enable_file_name_cleanup   = true,
+		use_underscore_for_spaces  = true,
 	}
 
 	json_bytes := json.marshal(default) or_return
@@ -59,6 +63,7 @@ Config_Create_File :: proc() -> Config_Error {
 	return nil
 }
 
+// Unmarshal Config File into CONFIG
 Config_Load_From_File :: proc(c: ^Config) -> Config_Error {
 	if !os.exists(CONFIG_FILEPATH) do fmt.panicf("[ERROR] Tried to load non-existant config file")
 
@@ -69,13 +74,18 @@ Config_Load_From_File :: proc(c: ^Config) -> Config_Error {
 	return nil
 }
 
+// Conditional checks on Unmarshalled CONFIG data
 Config_Ensure_Valid :: proc(c: ^Config) -> bool {
-	if c.enable_file_name_cleanup && len(c.strip_from_file_name) == 0 do fmt.println("[WARNING] Filename cleanup enabled, but strip_from_file_name array is empty")
+	if c.enable_file_name_cleanup {
+		if len(c.strip_from_file_name) == 0 do fmt.println("[WARNING] enable_file_name_cleanup is true, but strip_from_file_name array is empty")
+	} else {
+		if c.use_underscore_for_spaces do fmt.println("[WARNING] use_underscore_for_spaces is true, but enable_file_name_cleanup set to false")
+	}
 
 	if len(c.default_download_directory) == 0 {
-		if !c.always_use_working_directory do fmt.println("[WARNING] Default download directory is unset")
+		if !c.always_use_working_directory do fmt.println("[WARNING] default_download_directory is unset, and always_use_working_directory set to false")
 	} else {
-		if !os.exists(c.default_download_directory) {
+		if !os.exists(c.default_download_directory) && !c.always_use_working_directory {
 			fmt.eprintfln(
 				"[ERROR] Default Download Directory is not a valid path: %s",
 				c.default_download_directory,
@@ -85,18 +95,21 @@ Config_Ensure_Valid :: proc(c: ^Config) -> bool {
 	}
 
 	if c.send_browser_cookies && len(c.browser_for_cookies) == 0 {
-		fmt.eprintln("[ERROR] Send Browser Cookies enabled, but Browser For Cookies unset")
+		fmt.eprintln("[ERROR] send_browser_cookies set to true, but browser_for_cookies unset")
 		return false
 	}
 
 	if c.enable_download_logging && len(c.download_log_file_path) == 0 {
-		fmt.eprintln("[ERROR] Download Logging Enabled, but Download Log Filepath unset")
+		fmt.eprintln(
+			"[ERROR] enable_download_logging set to true, but download_log_file_path unset",
+		)
 		return false
 	}
 
 	return true
 }
 
+// Config Destructor
 Config_Delete :: proc(c: ^Config) {
 	for str in c.strip_from_file_name do delete_string(str)
 	delete_slice(c.strip_from_file_name)

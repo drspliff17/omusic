@@ -3,25 +3,26 @@ package main
 import "core:fmt"
 import "core:os"
 
-// TODO:
 
-// Get_Cleaned_Filename :: proc(fname: string) -> (cname: string, ok: bool) {
-// 	no_suff := strings.trim_suffix(fname, ".mp3")
-// 	bname := strings.clone(no_suff)
-// 	defer delete_string(bname)
-// 	if bname == fname do return "", false
-//
-// 	for toStrip in CONFIG.strip_from_file_name {
-// 		was_alloc: bool
-// 		tn := strings.clone(bname)
-// 		delete_string(bname)
-// 		bname, was_alloc = strings.remove_all(bname, toStrip)
-// 		delete_string(tn)
-// 	}
-//
-// 	return strings.clone(bname), true
-// }
+Download_Job_Clean_Files :: proc(d: ^Download_Job) -> bool {
+	files, err := os.read_all_directory_by_path(d^.tmp_dir, context.allocator)
+	defer {
+		for f in files do os.file_info_delete(f, context.allocator)
+		delete_slice(files)
+	}
+	if err != nil {
+		fmt.eprintfln("[ERROR] Failed to read directory: %s: %v", d^.tmp_dir, err)
+		return false
+	}
 
+	for f in files {
+
+	}
+
+	return true
+}
+
+// Main Download_Job proc
 Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 	download_args := Construct_YtDlp_Args(d)
 	defer {
@@ -40,8 +41,6 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 		delete_slice(stderr)
 	}
 
-	if len(stderr) > 0 do fmt.printfln("ERR:\n%s", string(stderr))
-
 	if state.exit_code != 0 {
 		//TODO: Add log entry here
 		fmt.eprintfln("[ERROR] Failed to download job [%s] -> dumping StdErr:\n", d.tmp_dir)
@@ -51,6 +50,22 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 
 	if CONFIG.enable_file_name_cleanup {
 		//TODO: Add file cleanup process
+		file_info, fi_err := os.read_all_directory_by_path(d^.tmp_dir, context.allocator)
+		if fi_err != nil {
+			fmt.eprintfln("[ERROR] Failed to read directory: [%s]: %v", d^.tmp_dir, fi_err)
+			return false
+		}
+		defer {
+			for fi in file_info do os.file_info_delete(fi, context.allocator)
+			delete_slice(file_info)
+		}
+
+		for file in file_info {
+			fmt.printf("TEST: PRE:\t%s", file.name)
+			nn := Get_Stripped_Filename(file.name)
+			fmt.printfln("\t POST:\n%s", nn)
+			delete_string(nn)
+		}
 	}
 
 	//TODO: Add meta tag process here

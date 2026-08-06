@@ -32,7 +32,7 @@ main :: proc() {
 		mem.tracking_allocator_destroy(&track)
 	}
 
-	missing_dependancies := Check_Dependancies()
+	missing_dependancies := Check_Dependancies({"yt-dlp", "eyeD3"})
 	defer {
 		for m in missing_dependancies do delete_string(m)
 		delete_slice(missing_dependancies)
@@ -46,14 +46,12 @@ main :: proc() {
 	Globals_Init()
 	defer Globals_Delete()
 
-	cfg_create_err := Config_Create_File()
-	if cfg_create_err != nil {
+	if cfg_create_err := Config_Create_File(); cfg_create_err != nil {
 		fmt.eprintfln("[ERROR] Failed to create config file: %v", cfg_create_err)
 		return
 	}
 
-	cfg_load_err := Config_Load_From_File(&CONFIG)
-	if cfg_load_err != nil {
+	if cfg_load_err := Config_Load_From_File(&CONFIG); cfg_load_err != nil {
 		fmt.eprintfln("[ERROR] Failed to load config file: %v", cfg_load_err)
 		return
 	}
@@ -64,12 +62,6 @@ main :: proc() {
 
 	DOWNLOAD_MANAGER = Download_Manager_Create()
 	defer Download_Manager_Delete(DOWNLOAD_MANAGER)
-
-	test := "!example.thing/.mp3"
-	testS, ok := Get_Cleaned_Filename(test)
-	if ok do delete_string(testS)
-	if true do return
-	//
 
 	manager_init := Download_Manager_Init_From_Args(DOWNLOAD_MANAGER)
 	if !manager_init do return

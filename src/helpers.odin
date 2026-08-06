@@ -5,7 +5,14 @@ import "core:os"
 import "core:slice"
 import "core:strings"
 
-Check_Dependancies :: proc() -> (missing_deps: []string) {
+// Check if given requirements are found, returns slice of missing deps
+Check_Dependancies :: proc(
+	reqs: []string,
+	alloc := context.allocator,
+) -> (
+	missing_deps: []string,
+) {
+
 	cmd: string
 	when ODIN_OS == .Windows {
 		cmd = "where"
@@ -13,8 +20,7 @@ Check_Dependancies :: proc() -> (missing_deps: []string) {
 		cmd = "which"
 	}
 
-	reqs := []string{"yt-dlp", "eyeD3"}
-	missing := make([dynamic]string)
+	missing := make([dynamic]string, alloc)
 	defer delete(missing)
 
 	for r in reqs {
@@ -22,49 +28,52 @@ Check_Dependancies :: proc() -> (missing_deps: []string) {
 		pd := os.Process_Desc {
 			command = args,
 		}
-		state, stdout, stderr, err := os.process_exec(pd, context.allocator)
+		state, stdout, stderr, err := os.process_exec(pd, alloc)
 		if err != nil do fmt.panicf("[ERROR] Failed to run dependancy check: [%s]", r)
 		defer {
-			delete_slice(stdout)
-			delete_slice(stderr)
+			delete_slice(stdout, alloc)
+			delete_slice(stderr, alloc)
 		}
-		if state.exit_code != 0 do append(&missing, strings.clone(r))
+		if state.exit_code != 0 do append(&missing, strings.clone(r, alloc))
 	}
-	return slice.clone(missing[:], context.allocator)
+	return slice.clone(missing[:], alloc)
 }
 
-Construct_YtDlp_Args :: proc(d: ^Download_Job) -> []string {
-	d_args := make([dynamic]string)
+// Returns allocated slice of arguments for job's yt-dlp Process_Desc (using CONFIG)
+Construct_YtDlp_Args :: proc(d: ^Download_Job, alloc := context.allocator) -> []string {
+	d_args := make([dynamic]string, alloc)
 	defer delete(d_args)
 
-	append(&d_args, strings.clone("yt-dlp"))
-	append(&d_args, strings.clone("-x"))
-	append(&d_args, strings.clone("--audio-format"))
-	append(&d_args, strings.clone("mp3"))
-	append(&d_args, strings.clone(d.data^.download_url))
+	append(&d_args, strings.clone("yt-dlp", alloc))
+	append(&d_args, strings.clone("-x", alloc))
+	append(&d_args, strings.clone("--audio-format", alloc))
+	append(&d_args, strings.clone("mp3", alloc))
+	append(&d_args, strings.clone(d.data^.download_url, alloc))
 
 	if CONFIG.send_browser_cookies {
-		append(&d_args, strings.clone("--cookies-from-browser"))
-		append(&d_args, strings.clone(CONFIG.browser_for_cookies))
+		append(&d_args, strings.clone("--cookies-from-browser", alloc))
+		append(&d_args, strings.clone(CONFIG.browser_for_cookies, alloc))
 	}
 
-	return slice.clone(d_args[:], context.allocator)
+	return slice.clone(d_args[:], alloc)
 }
 
-Construct_EyeD3_Args :: proc(d: ^Download_Job) -> []string {
-	d_args := make([dynamic]string)
+// Returns allocated slice of arguments for job's eyeD3 Process_Desc (using CONFIG)
+Construct_EyeD3_Args :: proc(d: ^Download_Job, alloc := context.allocator) -> []string {
+	d_args := make([dynamic]string, alloc)
 	defer {
 		delete(d_args)
 	}
 
 	base := "eyeD3"
-	append(&d_args, strings.clone(base))
+	append(&d_args, strings.clone(base, alloc))
 
 	//TODO: FINISH LOGIC HERE
 
-	return slice.clone(d_args[:], context.allocator)
+	return slice.clone(d_args[:], alloc)
 }
 
+//TODO: make this
 Print_Help :: proc() {
 
 }
