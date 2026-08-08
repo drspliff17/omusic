@@ -12,19 +12,28 @@ Config_Error :: union {
 	json.Unmarshal_Error,
 }
 
+Config_File_Cleanup :: struct {
+	enable_file_name_cleanup:  bool,
+	strip_from_file_name:      []string,
+	use_underscore_for_spaces: bool,
+}
+
+Config_Meta_Tags :: struct {
+	always_use_file_name:           bool,
+	always_use_directory_name:      bool,
+	always_use_working_directory:   bool,
+	replace_underscores_for_spaces: bool,
+}
+
 Config :: struct {
-	strip_from_file_name:         []string,
-	default_download_directory:   string,
-	download_log_file_path:       string,
-	browser_for_cookies:          string,
-	send_browser_cookies:         bool,
-	enable_download_logging:      bool,
-	enable_file_name_cleanup:     bool,
-	use_underscore_for_spaces:    bool,
-	allow_make_destination:       bool,
-	always_use_file_name:         bool,
-	always_use_directory_name:    bool,
-	always_use_working_directory: bool,
+	allow_make_destination:     bool,
+	enable_download_logging:    bool,
+	send_browser_cookies:       bool,
+	default_download_directory: string,
+	browser_for_cookies:        string,
+	download_log_file_path:     string,
+	using meta_tag_config:      Config_Meta_Tags,
+	using file_cleanup_config:  Config_File_Cleanup,
 }
 
 // Create default config file, or early return if it already exists
@@ -48,12 +57,14 @@ Config_Create_File :: proc() -> Config_Error {
 	defer delete_string(dwn_log)
 
 	default := Config {
-		strip_from_file_name       = []string{".", ",", "/", "?", "!", "\"", "'", "`"},
+		file_cleanup_config = {
+			strip_from_file_name = []string{".", ",", "/", "?", "!", "\"", "'", "`"},
+			enable_file_name_cleanup = true,
+			use_underscore_for_spaces = true,
+		},
 		default_download_directory = usr_music,
-		download_log_file_path     = dwn_log,
-		enable_download_logging    = true,
-		enable_file_name_cleanup   = true,
-		use_underscore_for_spaces  = true,
+		download_log_file_path = dwn_log,
+		enable_download_logging = true,
 	}
 
 	json_bytes := json.marshal(default) or_return

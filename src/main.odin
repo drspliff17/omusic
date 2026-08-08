@@ -66,7 +66,12 @@ main :: proc() {
 	manager_init := Download_Manager_Init_From_Args(DOWNLOAD_MANAGER)
 	if !manager_init do return
 
-	//TEST:
-	Download_Process_Job(DOWNLOAD_MANAGER.jobs[0])
+	for job in DOWNLOAD_MANAGER.jobs {
+		if ok := Download_Process_Job(job); ok {
+			//TODO: Log
+		} else {
+			//TODO: Log
+		}
+	}
 
 }

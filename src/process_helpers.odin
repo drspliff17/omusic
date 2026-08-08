@@ -1,6 +1,5 @@
 package main
 
-import "core:os"
 import "core:slice"
 import "core:strings"
 
@@ -57,20 +56,37 @@ Construct_YtDlp_Args :: proc(d: ^Download_Job, alloc := context.allocator) -> []
 	return slice.clone(d_args[:], alloc)
 }
 
-// Returns allocated slice of arguments for job's eyeD3 Process_Desc (using CONFIG)
-Construct_EyeD3_Args :: proc(
-	d: ^Download_Job,
-	filepath: string,
-	alloc := context.allocator,
-) -> []string {
+// Returns allocated slice of arguments for job's eyeD3 Process_Desc
+Construct_EyeD3_Core_Args :: proc(d: ^Download_Job, alloc := context.allocator) -> []string {
 	d_args := make([dynamic]string, alloc)
 	defer delete(d_args)
 
 	base := "eyeD3"
 	append(&d_args, strings.clone(base, alloc))
-	append(&d_args, strings.clone(filepath, alloc))
+	append(&d_args, strings.clone("--album", alloc))
+	append(&d_args, strings.clone(d^.data^.tag_album, alloc))
+	append(&d_args, strings.clone("--artist", alloc))
+	append(&d_args, strings.clone(d^.data^.tag_artist, alloc))
+	append(&d_args, strings.clone("--title", alloc))
+	append(&d_args, strings.clone(d^.data^.tag_title, alloc))
 
-	//TODO: FINISH LOGIC HERE
+	return slice.clone(d_args[:], alloc)
+}
+
+Construct_EyeD3_Full_Args :: proc(
+	d: ^Download_Job,
+	filename: string,
+	alloc := context.allocator,
+) -> []string {
+	core := Construct_EyeD3_Core_Args(d, alloc)
+	defer {
+		delete_slice(core, alloc)
+	}
+
+	d_args := slice.clone_to_dynamic(core, alloc)
+	defer delete(d_args)
+
+	append(&d_args, strings.clone(filename, alloc))
 
 	return slice.clone(d_args[:], alloc)
 }

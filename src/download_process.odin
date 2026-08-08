@@ -2,34 +2,105 @@ package main
 
 import "core:fmt"
 import "core:os"
+import "core:strings"
 
+Get_MP3_Count :: proc(directory: string) -> int {
+	c := 0
+	fi, fi_err := os.read_all_directory_by_path(directory, context.allocator)
+	defer os.file_info_slice_delete(fi, context.allocator)
+	if fi_err != nil {
+		fmt.panicf(
+			"[ERROR] Failed to read contents of output directory [%s]: %v",
+			directory,
+			fi_err,
+		)
+	}
+	for file in fi {
+		if strings.has_suffix(file.name, ".mp3") do c += 1
+	}
+	return c
+}
 
 // Main Download_Job proc
 Download_Process_Job :: proc(d: ^Download_Job) -> bool {
+
+	defer {
+		rm_err := os.remove_all(d.tmp_dir)
+		if rm_err != nil do fmt.eprintfln("[ERROR] Failed to remove %s: %v", d.tmp_dir, rm_err)
+	}
+
+	// Override from CONFIG
+	if CONFIG.always_use_working_directory {
+		wd, err := os.get_working_directory(context.allocator)
+		if err != nil do fmt.panicf("[ERROR] Failed to get working directory: %v", err)
+		d^.data.output_destination = wd
+	}
+
+	if len(d^.data^.download_url) == 0 {
+		fmt.eprintln("[ERROR] Expected playlist url to download")
+		return false
+	} else {
+		expected_format := "https://music.youtube.com/playlist"
+		if !strings.starts_with(d^.data^.download_url, expected_format) {
+			fmt.eprintfln("[ERROR] Invalid url, expected to start with:\n%s", expected_format)
+			return false
+		}
+	}
+
+	if len(d^.data^.output_destination) == 0 {
+		fmt.eprintfln("[ERROR] Expected output destination")
+		return false
+	}
+
+	if !os.exists(d^.data^.output_destination) {
+		if CONFIG.allow_make_destination {
+			err := os.make_directory_all(d^.data^.output_destination)
+			if err != nil {
+				fmt.eprintfln("[ERROR] Failed to create output directory: %v", err)
+				return false
+			}
+		} else {
+			fmt.eprintfln(
+				"[ERROR] Given output directory does not exist: %s",
+				d^.data^.output_destination,
+			)
+			return false
+		}
+	}
+
+	pre_download_output_mp3_count := Get_MP3_Count(d^.data^.output_destination)
+
+	// Download
 	download_args := Construct_YtDlp_Args(d)
 	defer {
 		for a in download_args do delete_string(a)
 		delete_slice(download_args)
 	}
 
+	fmt.println("[INFO] Download starting ... ")
+
 	pd := os.Process_Desc {
 		command     = download_args[:],
 		working_dir = d.tmp_dir,
 	}
 
-	state, stdout, stderr, err := os.process_exec(pd, context.allocator)
+	_, stdout, stderr, err := os.process_exec(pd, context.allocator)
 	defer {
 		delete_slice(stdout)
 		delete_slice(stderr)
 	}
 
-	if state.exit_code != 0 {
-		//NOTE: Add log entry here
-		fmt.eprintfln("[ERROR] Failed to download job [%s] -> dumping StdErr:\n", d.tmp_dir)
-		fmt.eprintfln("%s", string(stderr))
+	if err != nil {
+		fmt.eprintfln(
+			"[ERROR] Unexpected download process error: [%s] %v\nDumping Stderr:\n%s\n",
+			d.tmp_dir,
+			err,
+			string(stderr),
+		)
 		return false
 	}
 
+	// File Cleanup
 	if CONFIG.enable_file_name_cleanup {
 		file_info, fi_err := os.read_all_directory_by_path(d^.tmp_dir, context.allocator)
 		if fi_err != nil {
@@ -65,18 +136,86 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 		}
 	}
 
-	//TODO: Add meta tag process here
+	// Clear && Set Meta-Tags
+	file_info, file_err := os.read_all_directory_by_path(d^.tmp_dir, context.allocator)
+	if file_err != nil {
+		fmt.eprintfln("[ERROR] Failed to read directory: [%s]: %v", d^.tmp_dir, file_err)
+		return false
+	}
+	defer {
+		for fi in file_info do os.file_info_delete(fi, context.allocator)
+		delete_slice(file_info)
+	}
 
+	for file in file_info {
+
+		// Override Tags
+		//NOTE: Maybe add some kind of check for if tag is already set
+
+		if CONFIG.always_use_file_name {
+			no_ext := strings.trim_suffix(file.name, ".mp3")
+			if CONFIG.replace_underscores_for_spaces {
+				conv, was_alloc := strings.replace_all(no_ext, "_", " ")
+				defer if was_alloc do delete_string(conv)
+				d^.data.tag_title = strings.clone(conv)
+			} else {
+				d^.data.tag_title = strings.clone(no_ext)
+			}
+		}
+
+		if CONFIG.always_use_directory_name {
+			dir := os.base(d^.data.output_destination)
+			if CONFIG.replace_underscores_for_spaces {
+				conv, was_alloc := strings.replace_all(dir, "_", " ")
+				defer if was_alloc do delete_string(conv)
+				d^.data.tag_artist = strings.clone(conv)
+			} else {
+				d^.data.tag_artist = strings.clone(dir)
+			}
+		}
+
+		clear := os.Process_Desc {
+			command = []string{"eyeD3", "--remove-all", file.fullpath},
+		}
+
+		_, stdout, stderr, err := os.process_exec(clear, context.allocator)
+		delete_slice(stdout)
+		delete_slice(stderr)
+		if err != nil do fmt.eprintfln("[ERROR] Failed to clear tags from %s: %v", file.fullpath, err)
+
+		args := Construct_EyeD3_Full_Args(d, file.name)
+		defer {
+			for a in args do delete_string(a)
+			delete_slice(args)
+		}
+
+		set_tags := os.Process_Desc {
+			working_dir = d^.tmp_dir,
+			command     = args[:],
+		}
+
+		_, stdout, stderr, err = os.process_exec(set_tags, context.allocator)
+		delete_slice(stdout)
+		delete_slice(stderr)
+		if err != nil do fmt.eprintfln("[ERROR] Failed to set tags for %s: %v", file.fullpath, err)
+
+	}
+
+	// Move and Cleanup
 	copy_err := os.copy_directory_all(d.data^.output_destination, d.tmp_dir)
 	if copy_err != nil {
-		//NOTE: Add log entry here
 		fmt.eprintfln("[ERROR] Failed to move finished job [%s]", d.tmp_dir)
 		return false
 	}
 
-	rm_err := os.remove_all(d.tmp_dir)
-	if rm_err != nil do fmt.eprintfln("[ERROR] Failed to remove %s: %v", d.tmp_dir, rm_err)
-
-	fmt.printfln("[INFO] Download complete: Files copied to [%s]", d.data^.output_destination)
-	return true
+	post_download_mp3_count := Get_MP3_Count(d^.data^.output_destination)
+	if pre_download_output_mp3_count < post_download_mp3_count {
+		fmt.printfln("[INFO] Download complete: Files copied to [%s]", d.data^.output_destination)
+		return true
+	} else {
+		fmt.eprintfln(
+			"[ERROR] Process should have succeeded, but no new files detected in output.\nTry using -sc <browser>",
+		)
+		return false
+	}
 }
