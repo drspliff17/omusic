@@ -5,6 +5,24 @@ import "core:os"
 import "core:slice"
 import "core:strings"
 
+// Returns the number of .mp3 files in given directory
+Get_MP3_Count :: proc(directory: string) -> int {
+	c := 0
+	fi, fi_err := os.read_all_directory_by_path(directory, context.allocator)
+	defer os.file_info_slice_delete(fi, context.allocator)
+	if fi_err != nil {
+		fmt.panicf(
+			"[ERROR] Failed to read contents of output directory [%s]: %v",
+			directory,
+			fi_err,
+		)
+	}
+	for file in fi {
+		if strings.has_suffix(file.name, ".mp3") do c += 1
+	}
+	return c
+}
+
 // Check if given requirements are found, returns slice of missing deps
 Check_Dependancies :: proc(
 	reqs: []string,

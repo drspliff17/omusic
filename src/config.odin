@@ -27,11 +27,11 @@ Config_Meta_Tags :: struct {
 
 Config :: struct {
 	allow_make_destination:     bool,
-	enable_download_logging:    bool,
+	enable_logging:             bool,
 	send_browser_cookies:       bool,
 	default_download_directory: string,
+	log_filepath:               string,
 	browser_for_cookies:        string,
-	download_log_file_path:     string,
 	using meta_tag_config:      Config_Meta_Tags,
 	using file_cleanup_config:  Config_File_Cleanup,
 }
@@ -53,7 +53,7 @@ Config_Create_File :: proc() -> Config_Error {
 	usr_music := os.user_music_dir(context.allocator) or_return
 	defer delete_string(usr_music)
 
-	dwn_log := os.join_path({CONFIG_DIRECTORY, "downloads.log"}, context.allocator) or_return
+	dwn_log := os.join_path({CONFIG_DIRECTORY, "omusic.log"}, context.allocator) or_return
 	defer delete_string(dwn_log)
 
 	default := Config {
@@ -62,9 +62,10 @@ Config_Create_File :: proc() -> Config_Error {
 			enable_file_name_cleanup = true,
 			use_underscore_for_spaces = true,
 		},
+		replace_underscores_for_spaces = true,
 		default_download_directory = usr_music,
-		download_log_file_path = dwn_log,
-		enable_download_logging = true,
+		log_filepath = dwn_log,
+		enable_logging = true,
 	}
 
 	json_bytes := json.marshal(default) or_return
@@ -110,10 +111,8 @@ Config_Ensure_Valid :: proc(c: ^Config) -> bool {
 		return false
 	}
 
-	if c.enable_download_logging && len(c.download_log_file_path) == 0 {
-		fmt.eprintln(
-			"[ERROR] enable_download_logging set to true, but download_log_file_path unset",
-		)
+	if c.enable_logging && len(c.log_filepath) == 0 {
+		fmt.eprintln("[ERROR] enable_logging set to true, but log_filepath unset")
 		return false
 	}
 
@@ -127,5 +126,5 @@ Config_Delete :: proc(c: ^Config) {
 
 	delete_string(c.browser_for_cookies)
 	delete_string(c.default_download_directory)
-	delete_string(c.download_log_file_path)
+	delete_string(c.log_filepath)
 }

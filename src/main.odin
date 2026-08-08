@@ -6,6 +6,7 @@ import "core:mem"
 DEBUG := true
 
 main :: proc() {
+
 	track: mem.Tracking_Allocator
 	mem.tracking_allocator_init(&track, context.allocator)
 	context.allocator = mem.tracking_allocator(&track)
@@ -31,6 +32,7 @@ main :: proc() {
 
 		mem.tracking_allocator_destroy(&track)
 	}
+
 
 	missing_dependancies := Check_Dependancies({"yt-dlp", "eyeD3"})
 	defer {
@@ -67,11 +69,7 @@ main :: proc() {
 	if !manager_init do return
 
 	for job in DOWNLOAD_MANAGER.jobs {
-		if ok := Download_Process_Job(job); ok {
-			//TODO: Log
-		} else {
-			//TODO: Log
-		}
+		Download_Process_Job(job)
 	}
 
 }
