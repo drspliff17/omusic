@@ -89,18 +89,26 @@ Config_Load_From_File :: proc(c: ^Config) -> Config_Error {
 // Conditional checks on Unmarshalled CONFIG data
 Config_Ensure_Valid :: proc(c: ^Config) -> bool {
 	if c.enable_file_name_cleanup {
-		if len(c.strip_from_file_name) == 0 do fmt.println("[WARNING] enable_file_name_cleanup is true, but strip_from_file_name array is empty")
+		if len(c.strip_from_file_name) == 0 do Log(.WARN, "enable_file_name_cleanup is true, but strip_from_file_name array is empty", false)
 	} else {
-		if c.use_underscore_for_spaces do fmt.println("[WARNING] use_underscore_for_spaces is true, but enable_file_name_cleanup set to false")
+		if c.use_underscore_for_spaces do Log(.WARN, "use_underscore_for_spaces is true, but enable_file_name_cleanup set to false", false)
 	}
 
 	if len(c.default_download_directory) == 0 {
-		if !c.always_use_working_directory do fmt.println("[WARNING] default_download_directory is unset, and always_use_working_directory set to false")
+		if !c.always_use_working_directory do Log(.WARN, "default_download_directory is unset, and always_use_working_directory set to false", false)
 	} else {
 		if !os.exists(c.default_download_directory) && !c.always_use_working_directory {
 			fmt.eprintfln(
 				"[ERROR] Default Download Directory is not a valid path: %s",
 				c.default_download_directory,
+			)
+			Log(
+				.ERROR,
+				fmt.aprintf(
+					"Default Download Directory is not a valid path: %s",
+					c.default_download_directory,
+				),
+				true,
 			)
 			return false
 		}

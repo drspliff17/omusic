@@ -57,7 +57,11 @@ Construct_YtDlp_Args :: proc(d: ^Download_Job, alloc := context.allocator) -> []
 }
 
 // Returns allocated slice of arguments for job's eyeD3 Process_Desc
-Construct_EyeD3_Core_Args :: proc(d: ^Download_Job, alloc := context.allocator) -> []string {
+Construct_EyeD3_Core_Args :: proc(
+	d: ^Download_Job,
+	title := "",
+	alloc := context.allocator,
+) -> []string {
 	d_args := make([dynamic]string, alloc)
 	defer delete(d_args)
 
@@ -68,7 +72,12 @@ Construct_EyeD3_Core_Args :: proc(d: ^Download_Job, alloc := context.allocator) 
 	append(&d_args, strings.clone("--artist", alloc))
 	append(&d_args, strings.clone(d^.data^.tag_artist, alloc))
 	append(&d_args, strings.clone("--title", alloc))
-	append(&d_args, strings.clone(d^.data^.tag_title, alloc))
+
+	if len(title) == 0 {
+		append(&d_args, strings.clone(d^.data^.tag_title, alloc))
+	} else {
+		append(&d_args, strings.clone(title, alloc))
+	}
 
 	return slice.clone(d_args[:], alloc)
 }
@@ -76,9 +85,10 @@ Construct_EyeD3_Core_Args :: proc(d: ^Download_Job, alloc := context.allocator) 
 Construct_EyeD3_Full_Args :: proc(
 	d: ^Download_Job,
 	filename: string,
+	title := "",
 	alloc := context.allocator,
 ) -> []string {
-	core := Construct_EyeD3_Core_Args(d, alloc)
+	core := Construct_EyeD3_Core_Args(d, title, alloc)
 	defer {
 		delete_slice(core, alloc)
 	}

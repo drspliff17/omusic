@@ -1,5 +1,6 @@
 package main
 
+import "core:encoding/json"
 import "core:fmt"
 import "core:os"
 import "core:strings"
@@ -39,9 +40,7 @@ Download_Manager_Init_From_Args :: proc(m: ^Download_Manager) -> (init_ok: bool)
 	switch (args[0]) {
 	case "-s", "slurp", "--slurp":
 		if len(args) < 2 {
-			fmt.eprintln(
-				"[ERROR] Invalid usage: Expected filepath to slurp: omusic -s <job file-path>",
-			)
+			fmt.eprintln("[ERROR] Invalid usage: Expected filepath to slurp: omusic -s <filepath>")
 			return false
 		}
 
@@ -66,8 +65,63 @@ Download_Manager_Init_From_Args :: proc(m: ^Download_Manager) -> (init_ok: bool)
 			return false
 		}
 
-		//TODO: ADD PROC TO LOAD JOBS FROM FILE HERE
-		// THEN VERIFY HERE BEFORE STARTING MANAGER PROCESSING
+		if !strings.ends_with(file_info.name, ".json") {
+			fmt.eprintfln("[ERROR] Expected job file to be json, got: %s", file_info.name)
+			return false
+		}
+
+		jobs := make([dynamic]Download_Data)
+		defer {
+			for &j in jobs {
+				if len(j.download_url) > 0 do delete_string(j.download_url)
+				if len(j.output_destination) > 0 do delete_string(j.output_destination)
+				if len(j.tag_artist) > 0 do delete_string(j.tag_artist)
+				if len(j.tag_album) > 0 do delete_string(j.tag_album)
+				if len(j.tag_title) > 0 do delete_string(j.tag_title)
+			}
+			delete(jobs)
+		}
+
+		read_bytes, read_err := os.read_entire_file_from_path(
+			file_info.fullpath,
+			context.allocator,
+		)
+		if read_err != nil {
+			fmt.eprintfln("[ERROR] Failed to read file [%s]: %v", file_info.fullpath, read_err)
+			return false
+		}
+		defer delete_slice(read_bytes)
+
+		m_err := json.unmarshal(read_bytes, &jobs)
+		if m_err != nil {
+			fmt.eprintfln("[ERROR] Failed to unmarshal file [%s]: %v", file_info.fullpath, m_err)
+			return false
+		}
+
+		for j, i in jobs {
+			test := Download_Data {
+				output_destination = j.output_destination,
+				download_url       = j.download_url,
+				tag_album          = j.tag_album,
+				tag_artist         = j.tag_artist,
+				tag_title          = j.tag_title,
+			}
+			if !Download_Data_Verify_Min(&test) {
+				return false
+			}
+
+			data := Download_Data_Create()
+
+			data.output_destination = strings.clone(j.output_destination)
+			data.download_url = strings.clone(j.download_url)
+			data.tag_album = strings.clone(j.tag_album)
+			data.tag_artist = strings.clone(j.tag_artist)
+			data.tag_title = strings.clone(j.tag_title)
+
+
+			Download_Job_Create(data, m)
+		}
+
 		return true
 	}
 
@@ -91,7 +145,6 @@ Download_Manager_Init_From_Args :: proc(m: ^Download_Manager) -> (init_ok: bool)
 				return false
 			}
 
-			//TODO: Add url verification proc here
 			url = strings.clone(args[1])
 			args = args[2:]
 
@@ -194,6 +247,17 @@ Download_Manager_Init_From_Args :: proc(m: ^Download_Manager) -> (init_ok: bool)
 		}
 	}
 
+	test := Download_Data {
+		download_url       = url,
+		output_destination = output,
+		tag_album          = album,
+		tag_artist         = artist,
+		tag_title          = title,
+	}
+	if !Download_Data_Verify_Min(&test) {
+		return false
+	}
+
 	job_data := Download_Data_Create()
 
 	job_data.download_url = strings.clone(url)
@@ -203,5 +267,6 @@ Download_Manager_Init_From_Args :: proc(m: ^Download_Manager) -> (init_ok: bool)
 	job_data.tag_title = strings.clone(title)
 
 	Download_Job_Create(job_data, DOWNLOAD_MANAGER)
+
 	return true
 }

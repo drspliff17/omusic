@@ -18,6 +18,7 @@ Log_Location :: enum {
 }
 
 Log :: proc(level: Log_Level, msg: string, msg_alloc: bool, location := Log_Location.ALL) {
+	if !CONFIG.enable_logging do return
 	defer if msg_alloc do delete_string(msg)
 
 	log, err := os.open(CONFIG.log_filepath, os.O_APPEND | os.O_WRONLY | os.O_CREATE)

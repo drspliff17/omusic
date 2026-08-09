@@ -158,32 +158,60 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 		delete_slice(file_info)
 	}
 
+	if CONFIG.always_use_directory_name {
+		if len(d^.data^.tag_artist) > 0 do delete_string(d^.data^.tag_artist)
+
+		dir := os.base(d^.data.output_destination)
+		if CONFIG.replace_underscores_for_spaces {
+			conv, was_alloc := strings.replace_all(dir, "_", " ")
+			defer if was_alloc do delete_string(conv)
+			d^.data.tag_artist = strings.clone(conv)
+		} else {
+			d^.data.tag_artist = strings.clone(dir)
+		}
+	}
+
 	for file in file_info {
 
 		// Override Tags
-		//NOTE: Maybe add some kind of check for if tag is already set
+		// if CONFIG.always_use_file_name {
+		// 	if len(d^.data^.tag_title) > 0 do delete_string(d^.data^.tag_title)
+		//
+		// 	no_ext := strings.trim_suffix(file.name, ".mp3")
+		// 	if CONFIG.replace_underscores_for_spaces {
+		// 		conv, was_alloc := strings.replace_all(no_ext, "_", " ")
+		// 		defer if was_alloc do delete_string(conv)
+		// 		d^.data.tag_title = strings.clone(conv)
+		// 	} else {
+		// 		d^.data.tag_title = strings.clone(no_ext)
+		// 	}
+		// }
 
+		title: string
+		defer delete_string(title)
 		if CONFIG.always_use_file_name {
 			no_ext := strings.trim_suffix(file.name, ".mp3")
 			if CONFIG.replace_underscores_for_spaces {
 				conv, was_alloc := strings.replace_all(no_ext, "_", " ")
 				defer if was_alloc do delete_string(conv)
-				d^.data.tag_title = strings.clone(conv)
+				title = strings.clone(conv)
 			} else {
-				d^.data.tag_title = strings.clone(no_ext)
+				title = strings.clone(no_ext)
 			}
 		}
 
-		if CONFIG.always_use_directory_name {
-			dir := os.base(d^.data.output_destination)
-			if CONFIG.replace_underscores_for_spaces {
-				conv, was_alloc := strings.replace_all(dir, "_", " ")
-				defer if was_alloc do delete_string(conv)
-				d^.data.tag_artist = strings.clone(conv)
-			} else {
-				d^.data.tag_artist = strings.clone(dir)
-			}
-		}
+		// if CONFIG.always_use_directory_name {
+		// 	if len(d^.data^.tag_artist) > 0 do delete_string(d^.data^.tag_artist)
+		//
+		// 	dir := os.base(d^.data.output_destination)
+		// 	if CONFIG.replace_underscores_for_spaces {
+		// 		conv, was_alloc := strings.replace_all(dir, "_", " ")
+		// 		defer if was_alloc do delete_string(conv)
+		// 		d^.data.tag_artist = strings.clone(conv)
+		// 	} else {
+		// 		d^.data.tag_artist = strings.clone(dir)
+		// 	}
+		// }
 
 		clear := os.Process_Desc {
 			command = []string{"eyeD3", "--remove-all", file.fullpath},
@@ -194,7 +222,7 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 		delete_slice(stderr)
 		if err != nil do Log(.ERROR, fmt.aprintf("Failed to clear tags from %s: %v", file.fullpath, err), true)
 
-		args := Construct_EyeD3_Full_Args(d, file.name)
+		args := Construct_EyeD3_Full_Args(d, file.name, title)
 		defer {
 			for a in args do delete_string(a)
 			delete_slice(args)

@@ -3,7 +3,7 @@ package main
 import "core:fmt"
 import "core:mem"
 
-DEBUG := true
+DEBUG := false
 
 main :: proc() {
 
@@ -68,8 +68,8 @@ main :: proc() {
 	manager_init := Download_Manager_Init_From_Args(DOWNLOAD_MANAGER)
 	if !manager_init do return
 
+	fmt.printfln("[INFO] Download Manager initialized with %d job(s)", len(DOWNLOAD_MANAGER.jobs))
 	for job in DOWNLOAD_MANAGER.jobs {
 		Download_Process_Job(job)
 	}
-
 }
