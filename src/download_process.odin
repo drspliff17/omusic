@@ -16,6 +16,7 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 	if CONFIG.always_use_working_directory {
 		wd, err := os.get_working_directory(context.allocator)
 		if err != nil do fmt.panicf("[ERROR] Failed to get working directory: %v", err)
+		if len(d^.data.output_destination) > 0 do delete_string(d^.data.output_destination)
 		d^.data.output_destination = wd
 	}
 

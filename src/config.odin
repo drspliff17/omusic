@@ -39,7 +39,7 @@ Config :: struct {
 // Create default config file, or early return if it already exists
 Config_Create_File :: proc() -> Config_Error {
 	if os.exists(CONFIG_FILEPATH) {
-		if DEBUG {
+		if DEBUG_REMOVE_CONFIG {
 			os.remove(CONFIG_FILEPATH) or_return
 		} else {
 			return nil
