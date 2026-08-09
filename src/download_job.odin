@@ -30,7 +30,18 @@ Download_Job_Delete :: proc(job: ^Download_Job) {
 }
 
 Download_Job_Assign_Temp_Directory :: proc() -> string {
-	tmp, err := os.make_directory_temp("", "omusic_", context.allocator)
+	dir: string
+
+	override_dir, o_found := os.lookup_env("TMPDIR", context.allocator)
+	defer if o_found do delete_string(override_dir)
+
+	if o_found {
+		if os.exists(override_dir) {dir = override_dir} else {
+			fmt.eprintfln("[ERROR] $TMPDIR is set, but does not exist: %s", override_dir)
+		}
+	}
+
+	tmp, err := os.make_directory_temp(dir, "omusic_", context.allocator)
 	if err != nil do fmt.panicf("Failed to create temp directory: %v", err)
 	return tmp
 }
