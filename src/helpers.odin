@@ -58,7 +58,34 @@ Check_Dependancies :: proc(
 }
 
 
-//TODO: make this
+//TODO: Improve
 Print_Help :: proc() {
+	h := `
+          omusic
+============================
+Arguments:
+-u  | --url
+-o  | --output
 
+-a  | --artist
+-A  | --album
+-t  | --title
+-sc | --send-browser-cookies
+
+Flags:
+-ttf | --tag-title-filename
+-tad | --tag-artist-directory
+-wd  | --use-working-directory
+-mk  | --allow-mkdir-destination
+
+Config file: $HOME/.config/omusic/config.json
+^^dont forget to remove and fix the conf path
+when the time comes
+
+Config file: $HOME/.config/omusic2/config.json
+
+For more information, see:
+man omusic
+`
+	fmt.println(h)
 }

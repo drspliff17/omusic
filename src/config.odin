@@ -32,6 +32,7 @@ Config :: struct {
 	default_download_directory: string,
 	log_filepath:               string,
 	browser_for_cookies:        string,
+	custom_temp_location:       string,
 	using meta_tag_config:      Config_Meta_Tags,
 	using file_cleanup_config:  Config_File_Cleanup,
 }
@@ -132,6 +133,7 @@ Config_Delete :: proc(c: ^Config) {
 	for str in c.strip_from_file_name do delete_string(str)
 	delete_slice(c.strip_from_file_name)
 
+	delete_string(c.custom_temp_location)
 	delete_string(c.browser_for_cookies)
 	delete_string(c.default_download_directory)
 	delete_string(c.log_filepath)

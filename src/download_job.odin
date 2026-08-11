@@ -32,14 +32,26 @@ Download_Job_Delete :: proc(job: ^Download_Job) {
 Download_Job_Assign_Temp_Directory :: proc() -> string {
 	dir: string
 
-	override_dir, o_found := os.lookup_env("TMPDIR", context.allocator)
-	defer if o_found do delete_string(override_dir)
+	// override_dir, o_found := os.lookup_env("TMPDIR", context.allocator)
+	// defer if o_found do delete_string(override_dir)
 
-	if o_found {
-		if os.exists(override_dir) {dir = override_dir} else {
-			fmt.eprintfln("[ERROR] $TMPDIR is set, but does not exist: %s", override_dir)
+	if len(CONFIG.custom_temp_location) > 0 {
+		if !os.exists(CONFIG.custom_temp_location) {
+			fmt.eprintfln(
+				"[ERROR] custom_temp_location is set, but does not exist: %s",
+				CONFIG.custom_temp_location,
+			)
+		} else {
+			// TODO: Dir check
+			dir = CONFIG.custom_temp_location
 		}
 	}
+
+	// if o_found {
+	// 	if os.exists(override_dir) {dir = override_dir} else {
+	// 		fmt.eprintfln("[ERROR] $TMPDIR is set, but does not exist: %s", override_dir)
+	// 	}
+	// }
 
 	tmp, err := os.make_directory_temp(dir, "omusic_", context.allocator)
 	if err != nil do fmt.panicf("Failed to create temp directory: %v", err)

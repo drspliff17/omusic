@@ -187,7 +187,7 @@ Download_Manager_Init_From_Args :: proc(m: ^Download_Manager) -> (init_ok: bool)
 			artist = strings.clone(args[1])
 			args = args[2:]
 
-		case "-ab", "alb", "--album":
+		case "-A", "alb", "--album":
 			if len(args) < 2 {
 				fmt.eprintln("[ERROR] Invalid usage: Expected album")
 				return false
