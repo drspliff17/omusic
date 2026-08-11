@@ -54,8 +54,8 @@ Config_Create_File :: proc() -> Config_Error {
 	usr_music := os.user_music_dir(context.allocator) or_return
 	defer delete_string(usr_music)
 
-	dwn_log := os.join_path({CONFIG_DIRECTORY, "omusic.log"}, context.allocator) or_return
-	defer delete_string(dwn_log)
+	log := os.join_path({CONFIG_DIRECTORY, "omusic.log"}, context.allocator) or_return
+	defer delete_string(log)
 
 	default := Config {
 		file_cleanup_config = {
@@ -65,7 +65,7 @@ Config_Create_File :: proc() -> Config_Error {
 		},
 		replace_underscores_for_spaces = true,
 		default_download_directory = usr_music,
-		log_filepath = dwn_log,
+		log_filepath = log,
 		enable_logging = true,
 	}
 
@@ -103,14 +103,6 @@ Config_Ensure_Valid :: proc(c: ^Config) -> bool {
 				"[ERROR] Default Download Directory is not a valid path: %s",
 				c.default_download_directory,
 			)
-			Log(
-				.ERROR,
-				fmt.aprintf(
-					"Default Download Directory is not a valid path: %s",
-					c.default_download_directory,
-				),
-				true,
-			)
 			return false
 		}
 	}
@@ -120,9 +112,18 @@ Config_Ensure_Valid :: proc(c: ^Config) -> bool {
 		return false
 	}
 
-	if c.enable_logging && len(c.log_filepath) == 0 {
-		fmt.eprintln("[ERROR] enable_logging set to true, but log_filepath unset")
-		return false
+	if c.enable_logging {
+		if len(c.log_filepath) == 0 {
+			fmt.eprintln("[ERROR] enable_logging set to true, but log_filepath unset")
+			return false
+		}
+		if !os.exists(os.dir(c.log_filepath)) {
+			fmt.eprintfln(
+				"[ERROR] enable_logging set to true, but parent directory does not exist: %s",
+				c.log_filepath,
+			)
+			return false
+		}
 	}
 
 	if len(c.custom_temp_location) > 0 && !os.exists(c.custom_temp_location) {

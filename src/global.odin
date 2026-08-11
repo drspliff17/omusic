@@ -21,7 +21,7 @@ Globals_Init :: proc() {
 	HOME = strings.clone(home, context.allocator)
 	delete_string(home)
 
-	config_dir, err = os.join_path({HOME, ".config", "omusic2"}, context.allocator)
+	config_dir, err = os.join_path({HOME, ".config", "omusic"}, context.allocator)
 	if err != nil do fmt.panicf("[ERROR] Failed to allocate Config Directory: %v", err)
 	CONFIG_DIRECTORY = strings.clone(config_dir, context.allocator)
 	delete_string(config_dir)
