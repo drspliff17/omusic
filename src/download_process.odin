@@ -258,9 +258,10 @@ Download_Process_Job :: proc(d: ^Download_Job) -> bool {
 		return true
 	} else {
 		Log(
-			.ERROR,
-			"Process should have succeeded, but no new files detected in output directory - Try using -sc <browser>",
+			.WARN,
+			"Process should have succeeded, but no new files detected in output directory (ignore if overwriting files)",
 			false,
+			.TTY,
 		)
 		return false
 	}

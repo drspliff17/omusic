@@ -125,6 +125,14 @@ Config_Ensure_Valid :: proc(c: ^Config) -> bool {
 		return false
 	}
 
+	if len(c.custom_temp_location) > 0 && !os.exists(c.custom_temp_location) {
+		fmt.eprintfln(
+			"[ERROR] custom_temp_location given [%s] - but directory does not exist",
+			c.custom_temp_location,
+		)
+		return false
+	}
+
 	return true
 }
 
