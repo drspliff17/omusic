@@ -39,17 +39,8 @@ Config :: struct {
 
 // Create default config file, or early return if it already exists
 Config_Create_File :: proc() -> Config_Error {
-	if os.exists(CONFIG_FILEPATH) {
-		if DEBUG_REMOVE_CONFIG {
-			os.remove(CONFIG_FILEPATH) or_return
-		} else {
-			return nil
-		}
-	}
-
-	if !os.exists(CONFIG_DIRECTORY) {
-		os.make_directory_all(CONFIG_DIRECTORY) or_return
-	}
+	if os.exists(CONFIG_FILEPATH) do return nil
+	if !os.exists(CONFIG_DIRECTORY) do os.make_directory_all(CONFIG_DIRECTORY) or_return
 
 	usr_music := os.user_music_dir(context.allocator) or_return
 	defer delete_string(usr_music)

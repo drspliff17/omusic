@@ -3,18 +3,16 @@ package main
 import "core:fmt"
 import "core:mem"
 
-DEBUG_REMOVE_CONFIG := false
-DEBUG_TRACK_ALLOC := false
-DEBUG_NO_DEPS := false
+DEBUG :: ODIN_DEBUG
 
 main :: proc() {
 
 	track: mem.Tracking_Allocator
-	if DEBUG_TRACK_ALLOC {
+	if DEBUG {
 		mem.tracking_allocator_init(&track, context.allocator)
 		context.allocator = mem.tracking_allocator(&track)
 	}
-	defer if DEBUG_TRACK_ALLOC {
+	defer if DEBUG {
 		if len(track.allocation_map) > 0 {
 			fmt.eprintf("%v allocations not feed:\n", len(track.allocation_map))
 			for _, entry in track.allocation_map {
@@ -36,7 +34,7 @@ main :: proc() {
 		mem.tracking_allocator_destroy(&track)
 	}
 
-	if !DEBUG_NO_DEPS {
+	if !DEBUG {
 		missing_dependancies := Check_Dependancies({"yt-dlp", "eyeD3"})
 		defer {
 			for m in missing_dependancies do delete_string(m)
