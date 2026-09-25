@@ -4,6 +4,8 @@ A command-line YouTube Music playlist downloader written in Odin. It uses `yt-dl
 to extract MP3 audio, and `eyeD3` to set ID3 tags, with optional filename cleanup
 and batch downloads
 
+**Note**: This is still WIP. Functional, but unfinished.
+
 ## Requirements
 
 - Odin to build the project
