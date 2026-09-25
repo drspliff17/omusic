@@ -34,17 +34,15 @@ main :: proc() {
 		mem.tracking_allocator_destroy(&track)
 	}
 
-	if !DEBUG {
-		missing_dependancies := Check_Dependancies({"yt-dlp", "eyeD3"})
-		defer {
-			for m in missing_dependancies do delete_string(m)
-			delete_slice(missing_dependancies)
-		}
-		if len(missing_dependancies) > 0 {
-			fmt.eprintln("[ERROR] Failed Dependancy Check, could not find:")
-			for m in missing_dependancies do fmt.eprintfln("\t-  %s", m)
-			return
-		}
+	missing_dependancies := Check_Dependancies({"yt-dlp", "eyeD3"})
+	defer {
+		for m in missing_dependancies do delete_string(m)
+		delete_slice(missing_dependancies)
+	}
+	if len(missing_dependancies) > 0 {
+		fmt.eprintln("[ERROR] Failed Dependancy Check, could not find:")
+		for m in missing_dependancies do fmt.eprintfln("\t-  %s", m)
+		return
 	}
 
 	Globals_Init()
