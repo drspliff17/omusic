@@ -58,9 +58,9 @@ Check_Dependancies :: proc(
 }
 
 
-//TODO: Improve
 Print_Help :: proc() {
-	h := `
+	h := fmt.aprintf(
+		`
           omusic
 ============================
 Arguments:
@@ -78,14 +78,13 @@ Flags:
 -wd  | --use-working-directory
 -mk  | --allow-mkdir-destination
 
-Config file: $HOME/.config/omusic/config.json
-^^dont forget to remove and fix the conf path
-when the time comes
-
-Config file: $HOME/.config/omusic2/config.json
+Config file: %s
 
 For more information, see:
 man omusic
-`
+`,
+		CONFIG_FILEPATH,
+	)
 	fmt.println(h)
+	delete_string(h)
 }
